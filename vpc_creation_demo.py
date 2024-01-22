@@ -69,6 +69,23 @@ def create_vpc():
         ]
     )
     
+    ec2.create_security_group(
+        GroupName='VPC_DEMO_SG',
+        Description='MY_SG_Group',
+        VpcId=vpc_id
+    )
+    ec2.authorize_security_group_ingress(
+        GroupId=security_group_id,
+        IpPermissions=[
+            {
+                'IpProtocol':'tcp',
+                'FromPort':80,
+                'ToPort':80,
+                'IpRanges':[{'CidrIp':'0.0.0.0/0'}]
+            }
+        ]
+    )
+    
     #launch ec2 instance in private subnet
     ec2.create_instances(
         ImageId='ami-id',
@@ -81,6 +98,8 @@ def create_vpc():
                 'Groups':['security-group-id']
             }
         ]
+        SG_Id=security_group_id
+        subnet_Id=pri_subnet.id
     )
     
     
