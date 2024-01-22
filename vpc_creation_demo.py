@@ -44,7 +44,7 @@ def create_vpc():
     route_table_pub2.associate_with_subnet(subnetId=pub_subnet2.id)
     route_table_pub2.create_route(
         DestCidrBlock = '0.0.0.0/0',
-        NatGatewayId=nat_gateway.id
+        GatewayId=internet_gateway.id
     )
     
     #create route table for private subnet
