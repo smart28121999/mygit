@@ -141,5 +141,5 @@ def create_vpc_tgw_attachment():
     internet_gateway=ec2.create_internet_gateway()
     Prod_VPC.attach_internet_gateway(InternetGatewayId=internet_gateway.id)
     
-    if __name__=="main":
+if __name__=="main":
         create_vpc_tgw_attachment()
