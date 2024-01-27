@@ -4,7 +4,7 @@ def create_vpc_tgw_attachment():
     ec2 = boto3.client('ec2')
     #
     #create prod vpc
-    Prod_VPC = create_vpc_tgw_attachment(cidrblock='10.0.0.0/16')
+    Prod_VPC = ec2.create_vpc(cidrblock='10.0.0.0/16')
     
     prod_public_subnet=Prod_VPC.create_subnet(
         cidrblock='10.0.1.0/24',
@@ -26,7 +26,7 @@ def create_vpc_tgw_attachment():
     
     #
     #create non-prod vpc
-    Non_prod_vpc = create_vpc_tgw_attachment(cidrblock='10.1.0.0/16')
+    Non_prod_vpc = ec2.create_vpc(cidrblock='10.1.0.0/16')
     
     non_prod_private_subnet = Non_prod_vpc.create_subnet(
         cidrblock='10.1.1.0/24',
@@ -43,7 +43,7 @@ def create_vpc_tgw_attachment():
     
     #
     #create junction vpc
-    junction_vpc = create_vpc_tgw_attachment(cidrblock='10.2.0.0/16')
+    junction_vpc = ec2.create_vpc(cidrblock='10.2.0.0/16')
     
     junction_private_subnet = junction_vpc.create_subnet(
         cidrblock='10.2.1.0/24',
