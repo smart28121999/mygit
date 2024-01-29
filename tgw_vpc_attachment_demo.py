@@ -101,6 +101,28 @@ def create_vpc_tgw_attachment():
     ],  
     )
     
+    #create tgw route table for prod vpc
+    prod_vpc_transit_gateway_RT = ec2.create_transit_gateway_route_table(
+    TransitGatewayId='transit_gateway.id',
+    TagSpecifications=[
+        {
+            'ResourceType': 'transit_gateway_route_table',
+            'Tags': [
+                {
+                    'Key': 'string',
+                    'Value': 'string'
+                },
+            ]
+        },
+    ],
+    )
+    
+    #associating route table
+    associate_RT_with_attachment1 = prod_vpc_transit_gateway_RT.associate_transit_gateway_route_table(
+    TransitGatewayRouteTableId='prod_vpc_transit_gateway_RT.id',
+    TransitGatewayAttachmentId='vpc_transit_gateway_attachment1.id',
+    )
+    
 #-----------
     #create tgw attachment    
     vpc_transit_gateway_attachment2 = ec2.create_transit_gateway_vpc_attachment(
@@ -122,6 +144,28 @@ def create_vpc_tgw_attachment():
     ],  
     )
     
+    # #create tgw route table for non_prod vpc
+    non_prod_vpc_transit_gateway_RT = ec2.create_transit_gateway_route_table(
+    TransitGatewayId='transit_gateway.id',
+    TagSpecifications=[
+        {
+            'ResourceType': 'transit_gateway_route_table',
+            'Tags': [
+                {
+                    'Key': 'string',
+                    'Value': 'string'
+                },
+            ]
+        },
+    ],
+    )
+    
+    #associating route table
+    associate_RT_with_attachment2 = prod_vpc_transit_gateway_RT.associate_transit_gateway_route_table(
+    TransitGatewayRouteTableId='non_prod_vpc_transit_gateway_RT.id',
+    TransitGatewayAttachmentId='vpc_transit_gateway_attachment2.id',
+    )
+    
 #-----------    
     #create tgw attachment
     vpc_transit_gateway_attachment3 = ec2.create_transit_gateway_vpc_attachment(
@@ -141,6 +185,28 @@ def create_vpc_tgw_attachment():
             ]
         },
     ],  
+    )
+    
+    # #create tgw route table for junction vpc
+    junction_vpc_transit_gateway_RT = ec2.create_transit_gateway_route_table(
+    TransitGatewayId='transit_gateway.id',
+    TagSpecifications=[
+        {
+            'ResourceType': 'transit_gateway_route_table',
+            'Tags': [
+                {
+                    'Key': 'string',
+                    'Value': 'string'
+                },
+            ]
+        },
+    ],
+    )
+    
+    #associating route table
+    associate_RT_with_attachment3 = prod_vpc_transit_gateway_RT.associate_transit_gateway_route_table(
+    TransitGatewayRouteTableId='junction_vpc_transit_gateway_RT.id',
+    TransitGatewayAttachmentId='vpc_transit_gateway_attachment3.id',
     )
     
 #-----------    
