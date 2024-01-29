@@ -16,6 +16,23 @@ def create_vpc_tgw_attachment():
         AvailabilityZone='us-east-1a'
     )
     
+    #
+    #create transit gateway
+    transit_gateway = ec2.create_transit_gateway(
+        Description='This is transit gateway',
+        TagSpecifications=[
+        {
+            'ResourceType': 'transit-gateway',
+            'Tags': [
+                {
+                    'Key': 'anything',
+                    'Value': 'anything'
+                },
+            ]
+        },
+    ],
+    )
+    
     #create route table
     prod_vpc_route_table=ec2.create_route_table()
     prod_vpc_route_table.associate_with_subnet(subnetId=prod_public_subnet.id)
@@ -61,24 +78,9 @@ def create_vpc_tgw_attachment():
         DestCidrBlock='10.1.0.0/16',
         #GatewayId='string'
     )
-    
-    #
-    #create transit gateway
-    transit_gateway = ec2.create_transit_gateway(
-        Description='This is transit gateway',
-        TagSpecifications=[
-        {
-            'ResourceType': 'transit-gateway',
-            'Tags': [
-                {
-                    'Key': 'anything',
-                    'Value': 'anything'
-                },
-            ]
-        },
-    ],
-    )
-    
+ 
+#-----------   
+    #create tgw attachment
     vpc_transit_gateway_attachment1 = ec2.create_transit_gateway_vpc_attachment(
         TransitGatewayId='transit_gateway.id',
         VpcId='Prod_VPC.id',
@@ -99,6 +101,8 @@ def create_vpc_tgw_attachment():
     ],  
     )
     
+#-----------
+    #create tgw attachment    
     vpc_transit_gateway_attachment2 = ec2.create_transit_gateway_vpc_attachment(
         TransitGatewayId='transit_gateway.id',
         VpcId='Non_prod_vpc.id',
@@ -118,6 +122,8 @@ def create_vpc_tgw_attachment():
     ],  
     )
     
+#-----------    
+    #create tgw attachment
     vpc_transit_gateway_attachment3 = ec2.create_transit_gateway_vpc_attachment(
         TransitGatewayId='transit_gateway.id',
         VpcId='junction_vpc.id',
@@ -137,6 +143,24 @@ def create_vpc_tgw_attachment():
     ],  
     )
     
+#-----------    
+
+    #dynamically propagating the route tables of VPC to tgw
+    ec2.enable_transit_gateway_route_table_propagation(
+    TransitGatewayRouteTableId='transit_gateway_route_table.id',
+    TransitGatewayAttachmentId='vpc_transit_gateway_attachment1.id',
+    )
+    
+    ec2.enable_transit_gateway_route_table_propagation(
+    TransitGatewayRouteTableId='transit_gateway_route_table.id',
+    TransitGatewayAttachmentId='vpc_transit_gateway_attachment2.id',
+    )
+    
+    ec2.enable_transit_gateway_route_table_propagation(
+    TransitGatewayRouteTableId='transit_gateway_route_table.id',
+    TransitGatewayAttachmentId='vpc_transit_gateway_attachment3.id',
+    )
+
     #create internet gateway
     internet_gateway=ec2.create_internet_gateway()
     Prod_VPC.attach_internet_gateway(InternetGatewayId=internet_gateway.id)
