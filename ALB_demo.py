@@ -127,6 +127,13 @@ def create_ALB():
         Type='application',
         IpAddressType='ipv4'
     )
+    
+    associate_sg = alb.set_security_groups(
+    LoadBalancerArn='alb_arn',
+    SecurityGroups=[
+        'sg',
+    ]
+    )
 
     #create target groups
     target_group1=elbv2.create_target_group(
