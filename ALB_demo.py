@@ -85,7 +85,11 @@ def create_ALB():
                 'IpProtocol':'tcp',
                 'FromPort':80,
                 'ToPort':80,
-                'IpRanges':[{'CidrIp':'0.0.0.0/0'}]
+                'UserIdGroupRanges':[
+                    {
+                        'GroupId':sg.id
+                    }
+                ]
             }
         ]
     )
@@ -99,6 +103,27 @@ def create_ALB():
         SubnetId=private_subnet_az1.id,
         SG_ID=sg.id
     )
+    
+    #create IAM excution role for lambda
+    iam=boto3.client('iam')
+    iam_role=iam.create_role(
+        RoleName='lambda_role',
+        AssumeRolePolicyDocuments={
+            "Version":2023-12-28,
+            "Statement":[
+                {
+                    "Effect":"Allow",
+                    "Principal":
+                        {
+                            "Service":"lambda.amazonaws.com"
+                        },
+                }
+            ]
+        }    
+    )
+    
+    #Attach policy
+    iam.attach_role_policy(RoleName='LambdaExecution',PolicyArn='arn')
 
     #create lambda function
     create_lambda = boto3.client('lambda')
@@ -144,11 +169,34 @@ def create_ALB():
         TargetType='instance',
         IpAddressType='ipv4'
     )
+    
+    #register target group for ec2
+    reg_ec2_tg=elbv2.register_targets(
+        TargetGroupArn='Target_group1_arn',
+        Targets=[
+            {
+                'Id':'ec2.id',
+                'Port':80,
+            }
+        ]
+    )
 
+    #create target group for lambda
     target_group2=elbv2.create_target_group(
         Name='target_group_2',
         TargetType='lambda',
         IpAddressType='ipv4'
+    )
+    
+    #register target group for lambda
+    reg_lambda_tg=elbv2.register_targets(
+        TargetGroupArn='Target_group2_arn',
+        Targets=[
+            {
+                'Id':'lambda.id',
+                'Port':80,
+            }
+        ]
     )
 
     #create listeners for path based routing
@@ -188,7 +236,7 @@ def create_ALB():
     ]
     )
 
-    rule1=elbv2.create_rule(
+    rule2=elbv2.create_rule(
     ListenerArn='listener1_arn',
     Conditions=[
         {
