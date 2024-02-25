@@ -1,52 +1,52 @@
 import boto3
 
 def route53():
-    ec2 = boto3.client('ec2')
+    my_ec2 = boto3.client('ec2')
 
     #create vpc
-    vpc = ec2.create_vpc(cidrblock='10.0.0.0/16')
+    my_vpc = my_ec2.create_vpc(cidrblock='10.0.0.0/16')
 
     #create subnets
-    public_subnet = vpc.create_subnet(
+    public_subnet = my_vpc.create_subnet(
         cidrblock='10.0.0.0/24',
         AvailabilityZone='us-east-1a'
     )
 
-    private_subnet_1 = vpc.create_subnet(
+    private_subnet_1 = my_vpc.create_subnet(
         cidrblock='10.0.10.0/24',
         AvailabilityZone='us-east-1a'
     )
 
-    private_subnet_2 = vpc.create_subnet(
+    private_subnet_2 = my_vpc.create_subnet(
         cidrblock='10.0.11.0/24',
         AvailabilityZone='us-east-1a'
     )
 
     #create IGW
-    internet_gateway=ec2.create_internet_gateway()
-    vpc.attach_internet_gateway(InternetGatewayId=internet_gateway.id)
+    internet_gateway=my_ec2.create_internet_gateway()
+    my_vpc.attach_internet_gateway(InternetGatewayId=internet_gateway.id)
 
     #create NATG in az1
-    nat_gateway=ec2.create_nat_gateway(
+    nat_gateway=my_ec2.create_nat_gateway(
         subnetId=public_subnet.id
     )
 
     #create route tables
-    RT_pub_subnet=vpc.create_route_table()
+    RT_pub_subnet=my_vpc.create_route_table()
     RT_pub_subnet.associate_with_subnet(subnetId=public_subnet.id)
     RT_pub_subnet.create_route(
         DestCidrBlock = '0.0.0.0/0',
         GatewayId=internet_gateway.id
     )
 
-    RT_pri_subnet_1=vpc.create_route_table()
+    RT_pri_subnet_1=my_vpc.create_route_table()
     RT_pri_subnet_1.associate_with_subnet(subnetId=public_subnet.id)
     RT_pri_subnet_1.create_route(
         DestCidrBlock = '0.0.0.0/0',
         GatewayId=nat_gateway.id
     )
 
-    RT_pri_subnet_2=vpc.create_route_table()
+    RT_pri_subnet_2=my_vpc.create_route_table()
     RT_pri_subnet_2.associate_with_subnet(subnetId=public_subnet.id)
     RT_pri_subnet_2.create_route(
         DestCidrBlock = '0.0.0.0/0',
@@ -54,13 +54,13 @@ def route53():
     )
 
     #create Security_Group
-    security_group = ec2.create_security_group(
+    security_group = my_ec2.create_security_group(
          GroupName='My SG',
          Description='SG for ALB-ec2 attachement',
-         vpc=vpc.id
+         vpc=my_vpc.id
          )
     
-    ec2.authorize_security_group_ingress(
+    my_ec2.authorize_security_group_ingress(
         GroupId=security_group.id,
         IpPermissions=[
             {
@@ -72,7 +72,7 @@ def route53():
         ]
     )
 
-    ec2.authorize_security_group_ingress(
+    my_ec2.authorize_security_group_ingress(
         GroupId=security_group.id,
         IpPermissions=[
             {
@@ -85,7 +85,7 @@ def route53():
     )
 
     #create ec2 instance
-    ec2.run_instances(
+    my_ec2.run_instances(
         ImageId='ami-id',
         InstanceType='t2.micro',
         MinCount=1,
@@ -95,7 +95,7 @@ def route53():
     )
 
     #create virtual private gateway
-    vpn_gateway=ec2.create_vpn_gateway(
+    vpn_gateway=my_ec2.create_vpn_gateway(
     AvailabilityZone='us-east-1a',
     Type='ipsec.1',
     TagSpecifications=[
@@ -112,13 +112,13 @@ def route53():
     )
 
     #attach vpn gateway to vpc
-    attach_vpn_gateway=ec2.attach_vpn_gateway(
-    VpcId='vpc_id',
+    attach_vpn_gateway=my_ec2.attach_vpn_gateway(
+    VpcId='my_vpc_id',
     VpnGatewayId='vpn_gateway_id'
     )
 
     #create customer gateway
-    customer_gateway=ec2.create_customer_gateway(
+    customer_gateway=my_ec2.create_customer_gateway(
     PublicIp='11.11.11.11',
     Type='ipsec.1',
     TagSpecifications=[
@@ -135,7 +135,7 @@ def route53():
     )
 
     #create site-to-site vpn connection
-    vpn_connection=ec2.create_vpn_connection(
+    vpn_connection=my_ec2.create_vpn_connection(
         CustomerGatewayId='customer_gateway_id',
         Type='ipsec.1',
         VpnGatewayId='vpn_gateway_id',
@@ -151,13 +151,13 @@ def route53():
         }
     )
 
-    ec2.enable_vgw_route_propagation(
+    my_ec2.enable_vgw_route_propagation(
         GatewayId='vpn_gateway_id',
         RouteTableId='RT_pub_subnet_id',
     )
 
     #modify dns resolution & dns hostnames
-    enable=ec2.modify_vpc_attribute(
+    enable=my_ec2.modify_vpc_attribute(
         EnableDnsHostnames={
             'Value': True
         },
@@ -175,7 +175,7 @@ def route53():
         Name='www.cloud.com',
         VPC={
             'VPCRegion': 'us-east-1',
-            'VPCId': 'vpc_id'
+            'VPCId': 'my_vpc_id'
         },
         CallerReference='any_unique_string',
         HostedZoneConfig={
@@ -189,7 +189,7 @@ def route53():
         HostedZoneId='string',
         VPC={
             'VPCRegion': 'us-east-1',
-            'VPCId': 'vpc_id'
+            'VPCId': 'my_vpc_id'
         }
     )
 
@@ -206,7 +206,7 @@ def route53():
                         'TTL':300,
                         'ResourceRecords':[
                             {
-                                'Value':'ec2_private_ip'
+                                'Value':'my_ec2_private_ip'
                             }
                         ]
                     }
@@ -216,14 +216,14 @@ def route53():
     )
 
     #create SG for route53 resolver inbound endpoint
-    Resolver_SG_1 = ec2.create_security_group(
+    Resolver_SG_1 = my_ec2.create_security_group(
          GroupName='My_Resolver_SG_1',
          Description='SG Resolver Inbound/Outbound Endpoint',
-         vpc=vpc.id
+         vpc=my_vpc.id
          )
     
     #allow dns(udp 53) from on-prem
-    ec2.authorize_security_group_ingress(
+    my_ec2.authorize_security_group_ingress(
         GroupId=Resolver_SG_1.id,
         IpPermissions=[
             {
@@ -239,7 +239,7 @@ def route53():
     route53_resolver=boto3.client('route53resolver')
 
     route53_resolver.create_resolver_endpoint(
-        CreatorRequestId='15-02-2024',
+        CreatorRequestId='inbound_resolver_pri_subnet_1',
         SecurityGroupIds=[
             'Resolver_SG_1_id',
         ],
@@ -252,27 +252,27 @@ def route53():
     )
 
     route53_resolver.create_resolver_endpoint(
-        CreatorRequestId='5_pm',
+        CreatorRequestId='inbound_resolver_pri_subnet_2',
         SecurityGroupIds=[
             'Resolver_SG_1_id',
         ],
-        Direction='OUTBOUND',
+        Direction='INBOUND',
         IpAddresses=[
             {
-                'SubnetId': 'private_subnet_1_id',
+                'SubnetId': 'private_subnet_2_id',
             },
         ],
     )
 
     #create SG for route53 resolver inbound endpoint
-    Resolver_SG_2 = ec2.create_security_group(
+    Resolver_SG_2 = my_ec2.create_security_group(
          GroupName='My_Resolver_SG_2',
          Description='SG Resolver Inbound/Outbound Endpoint',
-         vpc=vpc.id
+         vpc=my_vpc.id
          )
     
     #allow dns(udp 53) from on-prem
-    ec2.authorize_security_group_ingress(
+    my_ec2.authorize_security_group_ingress(
         GroupId=Resolver_SG_2.id,
         IpPermissions=[
             {
@@ -285,20 +285,7 @@ def route53():
     )
 
     route53_resolver.create_resolver_endpoint(
-        CreatorRequestId='8_pm',
-        SecurityGroupIds=[
-            'Resolver_SG_2_id',
-        ],
-        Direction='INBOUND',
-        IpAddresses=[
-            {
-                'SubnetId': 'private_subnet_1_id',
-            },
-        ],
-    )
-
-    route53_resolver.create_resolver_endpoint(
-        CreatorRequestId='5_pm',
+        CreatorRequestId='outbound_resolver_pri_subnet_1',
         SecurityGroupIds=[
             'Resolver_SG_2_id',
         ],
@@ -308,4 +295,45 @@ def route53():
                 'SubnetId': 'private_subnet_1_id',
             },
         ],
+    )
+
+    route53_resolver.create_resolver_endpoint(
+        CreatorRequestId='outbound_resolver_pri_subnet_2',
+        SecurityGroupIds=[
+            'Resolver_SG_2_id',
+        ],
+        Direction='OUTBOUND',
+        IpAddresses=[
+            {
+                'SubnetId': 'private_subnet_2_id',
+            },
+        ],
+    )
+    
+    route53_resolver.create_resolver_rule(
+        CreatorRequestId='outbound_resolver_rule_pri_subnet_1',
+        RuleType='FORWARD',
+        DomainName='cloud.com',
+        TargetIps=[
+            {
+                'Ip': '192.168.x.x',  # DNS resolver's IP
+                'Port': 53,
+            },
+        ],
+        ResolverEndpointId='string',
+        
+    )
+    
+    route53_resolver.create_resolver_rule(
+        CreatorRequestId='outbound_resolver_rule_pri_subnet_2',
+        RuleType='FORWARD',
+        DomainName='cloud.com',
+        TargetIps=[
+            {
+                'Ip': '192.168.x.x',  # DNS resolver's IP
+                'Port': 53,
+            },
+        ],
+        ResolverEndpointId='string',
+        
     )
