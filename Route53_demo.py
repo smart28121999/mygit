@@ -85,7 +85,7 @@ def route53():
     )
 
     #create ec2 instance
-    my_ec2.run_instances(
+    instance=my_ec2.run_instances(
         ImageId='ami-id',
         InstanceType='t2.micro',
         MinCount=1,
@@ -150,10 +150,11 @@ def route53():
             ]
         }
     )
-
-    my_ec2.enable_vgw_route_propagation(
-        GatewayId='vpn_gateway_id',
-        RouteTableId='RT_pub_subnet_id',
+    
+    #create static route for vpn_conection
+    response=my_ec2.create_vpn_connection_route(
+        DestinationCidrBlock= '198.168.0.0/16',
+        VpnConnectionId='vpn_connection_id'
     )
 
     #modify dns resolution & dns hostnames
@@ -192,6 +193,13 @@ def route53():
             'VPCId': 'my_vpc_id'
         }
     )
+    
+    #Get private IP of ec2 instance
+    response=my_ec2.describe_instance(
+        InstanceIds=[instance.id]
+    )
+    
+    my_ec2_private_ip=response['Reservations'][0]['Instances'][0]['PrivateIpAddress']
 
     #create resource records
     route53.change_resource_record_sets(
@@ -313,7 +321,7 @@ def route53():
     route53_resolver.create_resolver_rule(
         CreatorRequestId='outbound_resolver_rule_pri_subnet_1',
         RuleType='FORWARD',
-        DomainName='cloud.com',
+        DomainName='onprem.com',
         TargetIps=[
             {
                 'Ip': '192.168.x.x',  # DNS resolver's IP
@@ -327,7 +335,7 @@ def route53():
     route53_resolver.create_resolver_rule(
         CreatorRequestId='outbound_resolver_rule_pri_subnet_2',
         RuleType='FORWARD',
-        DomainName='cloud.com',
+        DomainName='onprem.com',
         TargetIps=[
             {
                 'Ip': '192.168.x.x',  # DNS resolver's IP
